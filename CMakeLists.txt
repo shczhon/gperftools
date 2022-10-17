@@ -728,10 +728,10 @@ if(WITH_STACK_TRACE)
           src/base/elf_mem_image.cc
           src/base/vdso_support.cc
           ${STACKTRACE_INCLUDES})
-  add_library(stacktrace INTERFACE)
+  add_library(gperf_stacktrace INTERFACE)
   add_library(stacktrace_object OBJECT ${libstacktrace_la_SOURCES})
-  target_link_libraries(stacktrace INTERFACE ${unwind_libs} ${LIBSPINLOCK})
-  target_sources(stacktrace INTERFACE $<TARGET_OBJECTS:stacktrace_object>)
+  target_link_libraries(gperf_stacktrace INTERFACE ${unwind_libs} ${LIBSPINLOCK})
+  target_sources(gperf_stacktrace INTERFACE $<TARGET_OBJECTS:stacktrace_object>)
 
   set(libfake_stacktrace_scope_la_SOURCES src/fake_stacktrace_scope.cc)
   add_library(fake_stacktrace_scope ${libfake_stacktrace_scope_la_SOURCES})
@@ -744,7 +744,7 @@ if(WITH_STACK_TRACE)
     set(stacktrace_unittest_SOURCES src/tests/stacktrace_unittest.cc
             ${STACKTRACE_UNITTEST_INCLUDES})
     add_executable(stacktrace_unittest ${stacktrace_unittest_SOURCES})
-    target_link_libraries(stacktrace_unittest stacktrace logging fake_stacktrace_scope)
+    target_link_libraries(stacktrace_unittest gperf_stacktrace logging fake_stacktrace_scope)
     add_test(stacktrace_unittest stacktrace_unittest)
   endif()
 
@@ -837,7 +837,7 @@ target_compile_definitions(tcmalloc_minimal PRIVATE ${libtcmalloc_minimal_la_DEF
 set(libtcmalloc_minimal_la_LIBADD tcmalloc_minimal_internal)
 target_link_libraries(tcmalloc_minimal PRIVATE tcmalloc_minimal_internal Threads::Threads)
 if(MINGW)
-  target_link_libraries(tcmalloc_minimal PRIVATE stacktrace)
+  target_link_libraries(tcmalloc_minimal PRIVATE gperf_stacktrace)
 endif()
 set_target_properties(tcmalloc_minimal PROPERTIES
         VERSION ${TCMALLOC_SO_VERSION}
@@ -849,7 +849,7 @@ if(GPERFTOOLS_BUILD_STATIC)
     target_compile_definitions(tcmalloc_minimal_static PRIVATE NO_TCMALLOC_SAMPLES NDEBUG)
     target_link_libraries(tcmalloc_minimal_static PRIVATE tcmalloc_minimal_internal Threads::Threads)
     if(MINGW)
-      target_link_libraries(tcmalloc_minimal_static PRIVATE stacktrace)
+      target_link_libraries(tcmalloc_minimal_static PRIVATE gperf_stacktrace)
     endif()
     if(NOT MSVC)
       set_target_properties(tcmalloc_minimal_static PROPERTIES
@@ -1145,7 +1145,7 @@ if(GPERFTOOLS_BUILD_HEAP_CHECKER OR GPERFTOOLS_BUILD_HEAP_PROFILER)
           ${EMERGENCY_MALLOC_CC}
           src/memory_region_map.cc)
   set(libtcmalloc_internal_la_DEFINE NDEBUG ${EMERGENCY_MALLOC_DEFINE})
-  set(libtcmalloc_internal_la_LIBADD stacktrace Threads::Threads)
+  set(libtcmalloc_internal_la_LIBADD gperf_stacktrace Threads::Threads)
 
   set(libtcmalloc_la_SOURCES ${TCMALLOC_CC} ${TCMALLOC_INCLUDES})
   set(libtcmalloc_la_DEFINE NDEBUG ${EMERGENCY_MALLOC_DEFINE})
@@ -1373,7 +1373,7 @@ if(GPERFTOOLS_BUILD_CPU_PROFILER)
           src/profile-handler.cc
           src/profiledata.cc
           ${CPU_PROFILER_INCLUDES})
-  set(libprofiler_la_LIBADD stacktrace ${maybe_threads_lib} fake_stacktrace_scope)
+  set(libprofiler_la_LIBADD gperf_stacktrace ${maybe_threads_lib} fake_stacktrace_scope)
   add_library(profiler SHARED ${libprofiler_la_SOURCES})
   target_link_libraries(profiler PRIVATE ${libprofiler_la_LIBADD})
   set_target_properties(profiler PROPERTIES
@@ -1391,7 +1391,7 @@ if(GPERFTOOLS_BUILD_CPU_PROFILER)
 
   # See discussion above (under LIBTCMALLOC_MINIMAL) for why we do this.
   # Basically it's to work around systems where --rpath doesn't work right.
-  set(LIBPROFILER stacktrace profiler)
+  set(LIBPROFILER gperf_stacktrace profiler)
 
   if(BUILD_TESTING)
     add_executable(getpc_test src/tests/getpc_test.cc src/getpc.h)
@@ -1422,11 +1422,11 @@ if(GPERFTOOLS_BUILD_CPU_PROFILER)
     target_link_libraries(profiler1_unittest ${LIBPROFILER})
     add_executable(profiler2_unittest ${PROFILER_UNITTEST_SRCS})
     target_compile_definitions(profiler2_unittest PRIVATE NO_THREADS)
-    target_link_libraries(profiler2_unittest stacktrace profiler)
+    target_link_libraries(profiler2_unittest ${LIBPROFILER})
     add_executable(profiler3_unittest ${PROFILER_UNITTEST_SRCS})
     target_link_libraries(profiler3_unittest ${LIBPROFILER} Threads::Threads)
     add_executable(profiler4_unittest ${PROFILER_UNITTEST_SRCS})
-    target_link_libraries(profiler4_unittest stacktrace profiler Threads::Threads)
+    target_link_libraries(profiler4_unittest ${LIBPROFILER} Threads::Threads)
   endif()
 endif()
 
